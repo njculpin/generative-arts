@@ -77,6 +77,51 @@ def darker(color, percent):
 import pygame, sys
 from pygame.locals import *
 
+class Hero(pygame.sprite.Sprite):
+      def __init__(self):
+        super().__init__() 
+        
+        ship_sprite = draw_ship()
+        mode = ship_sprite.mode
+        size = ship_sprite.size
+        data = ship_sprite.tobytes()
+        
+        self.ship = pygame.image.fromstring(data, size, mode)         
+        self.surf = pygame.Surface((50, 80))
+        
+        randomLeft = (0, random.randint(50, 550))
+        randomTop = (random.randint(50, 550), 0)
+        randomBottom = (random.randint(0, 550), 600)
+        randomRight = (600, random.randint(50, 550))
+        randomSpawn = random.choice([randomLeft, randomRight, randomTop, randomBottom])        
+        self.rect = self.surf.get_rect(center = (randomSpawn))
+        
+        self.reset_offset = 0
+        self.offset_x = random.randrange(-30, 30)
+        self.offset_y = random.randrange(-30, 30)
+        
+        if self.reset_offset == 0:
+          self.offset_x = random.randrange(-30, 30)
+          self.offset_y = random.randrange(-30, 30)
+          self.reset_offset = random.randrange(120, 150)
+        else:
+          self.reset_offset -= 1         
+        
+      def move(self):
+        
+        if E1.rect.x + self.offset_x > self.rect.x:
+          self.rect.x += 1
+        elif E1.rect.x + self.offset_x < self.rect.x:
+          self.rect.x -= 1
+      
+        if E1.rect.y + self.offset_y > self.rect.y:
+          self.rect.y += 1
+        elif E1.rect.y + self.offset_y < self.rect.y:
+          self.rect.y -= 1
+ 
+      def draw(self, surface):
+        surface.blit(self.ship, self.rect)
+
 class Enemy(pygame.sprite.Sprite):
       def __init__(self):
         super().__init__() 
@@ -89,23 +134,41 @@ class Enemy(pygame.sprite.Sprite):
         self.ship = pygame.image.fromstring(data, size, mode)         
         self.surf = pygame.Surface((50, 80))
         
-        randomLeft = {'name':'left','coord':(0, random.randint(50, 550))}
-        randomTop = {'name':'top','coord':(random.randint(50, 550), 0)}
-        randomBottom = {'name':'bottom','coord':(random.randint(0, 550), 600)}
-        randomRight = {'name':'right','coord':(600, random.randint(50, 550))}
+        randomLeft = (0, random.randint(50, 550))
+        randomTop = (random.randint(50, 550), 0)
+        randomBottom = (random.randint(0, 550), 600)
+        randomRight = (600, random.randint(50, 550))
         randomSpawn = random.choice([randomLeft, randomRight, randomTop, randomBottom])        
-        self.rect = self.surf.get_rect(center = (randomSpawn["coord"])) 
+        self.rect = self.surf.get_rect(center = (randomSpawn))
         
+        self.reset_offset = 0
+        self.offset_x = random.randrange(-30, 30)
+        self.offset_y = random.randrange(-30, 30)
+        
+        if self.reset_offset == 0:
+          self.offset_x = random.randrange(-30, 30)
+          self.offset_y = random.randrange(-30, 30)
+          self.reset_offset = random.randrange(120, 150)
+        else:
+          self.reset_offset -= 1        
  
       def move(self):
-        self.rect.move_ip(0,5)
-        
-        if (self.rect.bottom > 650):
-            self.rect.top = 0
-            #self.rect.center = random.choice([randomLeft, randomRight, randomTop, randomBottom])
+                
+        if HERO.rect.x + self.offset_x > self.rect.x:
+          self.rect.x += 1
+        elif HERO.rect.x + self.offset_x < self.rect.x:
+          self.rect.x -= 1
+      
+        if HERO.rect.y + self.offset_y > self.rect.y:
+          self.rect.y += 1
+        elif HERO.rect.y + self.offset_y < self.rect.y:
+          self.rect.y -= 1        
  
       def draw(self, surface):
-        surface.blit(self.ship, self.rect) 
+        surface.blit(self.ship, self.rect)
+
+HERO = Hero()      
+E1 = Enemy()
 
 def main():
   pygame.init()
@@ -114,18 +177,19 @@ def main():
   
   FPS = 60
   FramePerSec = pygame.time.Clock()
-  
-  E1 = Enemy()
-  
+    
   while True:     
     for event in pygame.event.get():              
       if event.type == QUIT:
         pygame.quit()
         sys.exit()
     E1.move()
+    HERO.move()
   
     screen.fill((0, 0, 0))
+    
     E1.draw(screen)
+    HERO.draw(screen)
   
     pygame.display.update()
     FramePerSec.tick(FPS)
