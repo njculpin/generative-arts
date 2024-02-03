@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Random SVG Spaceship</title>
+  </head>
+  <body>
+    <div id="spaceship-container"></div>
+
+    <script>
+      const size = 10;
+      let grid;
+      let highlightColors;
+
+      function generateRandomSeed() {
+        return Math.floor(Math.random() * 9000000000) + 1000000000;
+      }
+
+      function createSVGElement(tag, attributes) {
+        const element = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          tag
+        );
+        for (const [key, value] of Object.entries(attributes)) {
+          element.setAttribute(key, value);
+        }
+        return element;
+      }
+
+      function generateSpaceship(seed) {
+        const container = document.getElementById("spaceship-container");
+
+        container.innerHTML = "";
+
+        Math.seed = seed;
+
+        const svg = createSVGElement("svg", {
+          width: "100",
+          height: "100",
+        });
+
+        const colors = ["#A6419F", "#F263E9", "#7B518C", "#66E4F2", "#0D0D0D"];
+        highlightColors = [
+          ["#FF0000", "#FF8080", "#FFD9D9"], // Red tones
+          ["#00FF00", "#80FF80", "#D9FFD9"], // Green tones
+          ["#0000FF", "#8080FF", "#D9D9FF"], // Blue tones
+          ["#FFFF00", "#FFFF80", "#FFFFD9"], // Yellow tones
+        ];
+        const chosenHighlightColor =
+          highlightColors[Math.floor(Math.random() * highlightColors.length)];
+        const grayTones = ["#808080", "#A0A0A0", "#C0C0C0"];
+
+        const squareSize = 100 / size;
+
+        grid = Array.from({ length: size }, () =>
+          Array(Math.ceil(size / 2)).fill(null)
+        );
+
+        function connectPath(from, to) {
+          const stepX = from[0] < to[0] ? 1 : -1;
+          const stepY = from[1] < to[1] ? 1 : -1;
+
+          for (
+            let x = from[0], y = from[1];
+            x !== to[0] && y !== to[1];
+            x += stepX, y += stepY
+          ) {
+            grid[y][x] = true;
+          }
+        }
+
+        const start = [0, Math.floor(size / 2)];
+        let current = start;
+
+        while (current[1] > 0) {
+          let nextX, nextY;
+
+          nextX = current[0] + (Math.random() < 0.5 ? 1 : -1);
+          nextY = current[1] - 1;
+
+          connectPath(current, [nextX, nextY]);
+
+          current = [nextX, nextY];
+        }
+
+        for (let y = 0; y < size; y++) {
+          for (let x = 0; x < Math.ceil(size / 2); x++) {
+            const isConnected = grid[y][x];
+
+            if (!isConnected) {
+              const topLeftX = x * squareSize;
+              const topLeftY = y * squareSize;
+              const botRightX = (size - x) * squareSize;
+              const botRightY = (y + 1) * squareSize;
+
+              const isLeftEdge = x === 0;
+              const isRightEdge = x === Math.floor(size / 2) - 1;
+              const isTopEdge = y === 0;
+              const isBottomEdge = y === size - 1;
+
+              const noiseProbability =
+                isLeftEdge || isRightEdge
+                  ? 0.6 + Math.random() * 0.4
+                  : isTopEdge || isBottomEdge
+                  ? 0.5
+                  : 0.2;
+
+              const isEngineOrCockpit =
+                (isLeftEdge || isRightEdge || isTopEdge || isBottomEdge) &&
+                Math.random() < 0.5;
+
+              let color = null;
+
+              if (
+                isEngineOrCockpit &&
+                colors.length > 0 &&
+                Math.random() < 0.5
+              ) {
+                color = colors[Math.floor(Math.random() * colors.length)];
+              } else if (grayTones.length > 0 && Math.random() < 0.5) {
+                color = grayTones[Math.floor(Math.random() * grayTones.length)];
+              } else if (highlightColors.length > 0 && Math.random() < 0.2) {
+                color =
+                  chosenHighlightColor[
+                    Math.floor(Math.random() * chosenHighlightColor.length)
+                  ];
+              }
+
+              if (color !== null) {
+                const square = createSVGElement("rect", {
+                  x: topLeftX.toString(),
+                  y: topLeftY.toString(),
+                  width: (botRightX - topLeftX).toString(),
+                  height: (botRightY - topLeftY).toString(),
+                  fill: color,
+                });
+                svg.appendChild(square);
+              }
+            }
+          }
+        }
+
+        if (svg.children.length > 0) {
+          container.appendChild(svg);
+        }
+      }
+
+      const randomSeed = generateRandomSeed();
+      generateSpaceship(randomSeed);
+    </script>
+  </body>
+</html>

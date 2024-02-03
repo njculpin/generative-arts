@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Top-Down Airplane Game</title>
+    <style>
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        margin: 0;
+        font-family: "Arial", sans-serif;
+        background-color: #f0f0f0;
+      }
+
+      #game-container {
+        display: flex;
+        align-items: center;
+      }
+
+      svg {
+        background-color: #87ceeb; /* Sky Blue */
+        max-width: 450px;
+        max-height: 450px;
+      }
+
+      #airplane {
+        transition: transform 0.5s ease-in-out;
+      }
+
+      .projectile {
+        fill: black;
+      }
+
+      #controls {
+        display: flex;
+        flex-direction: column;
+        margin-left: 20px;
+      }
+
+      .slider-container {
+        margin-bottom: 15px;
+      }
+
+      label {
+        font-size: 16px;
+        margin-bottom: 5px;
+        width: 100px;
+        display: inline-block;
+      }
+
+      input[type="range"] {
+        width: 100%;
+        margin-bottom: 5px;
+      }
+
+      #speedIndicator {
+        position: relative;
+        height: 150px;
+        background: linear-gradient(to bottom, #2196f3, #f44336);
+        border-radius: 4px;
+        margin-top: 10px;
+      }
+
+      #speedIndicator::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: var(--speed-indicator-height, 0%);
+        background-color: #4caf50;
+        border-radius: 4px;
+      }
+
+      #nextButton,
+      #attackButton {
+        background-color: #4caf50;
+        color: white;
+        margin-top: 10px;
+        padding: 8px 16px;
+        font-size: 14px;
+        cursor: pointer;
+        border: none;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="game-container">
+      <svg id="game-svg" width="450" height="450">
+        <rect x="0" y="0" width="450" height="450" fill="#2E8B57" />
+        <!-- Ground -->
+        <!-- Correct initial position of the airplane -->
+        <polygon
+          id="airplane"
+          points="150,290 160,270 140,270"
+          fill="#FF4500"
+          transform="translate(125, 150) rotate(0 150 290)"
+        />
+      </svg>
+
+      <div id="controls">
+        <div class="slider-container">
+          <label for="speedSlider"
+            >Speed: <span id="speedValue">10</span></label
+          >
+          <input type="range" id="speedSlider" value="10" min="1" max="20" />
+        </div>
+
+        <div class="slider-container">
+          <label for="turnSlider"
+            >Turn Angle: <span id="turnValue">0</span>°</label
+          >
+          <input type="range" id="turnSlider" value="0" min="-30" max="30" />
+        </div>
+
+        <button id="nextButton" onclick="moveAirplane()">Next</button>
+        <button id="attackButton" onclick="fireProjectile()">Attack</button>
+      </div>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const airplane = document.getElementById("airplane");
+        const gameSvg = document.getElementById("game-svg");
+        const turnSlider = document.getElementById("turnSlider");
+        const speedSlider = document.getElementById("speedSlider");
+        const speedIndicator = document.getElementById("speedIndicator");
+        const turnValue = document.getElementById("turnValue");
+        const speedValue = document.getElementById("speedValue");
+
+        let turnAngle = 0;
+        let speed = 10;
+
+        function moveAirplane() {
+          const turn = parseFloat(turnSlider.value);
+          turnAngle += turn;
+
+          const radians = (turnAngle * Math.PI) / 180;
+          const dx = speed * 2 * Math.sin(radians);
+          const dy = -speed * 2 * Math.cos(radians);
+
+          const currentTransform = airplane.getAttribute("transform");
+          const currentX =
+            parseFloat(currentTransform.split("(")[1].split(",")[0]) + dx;
+          const currentY =
+            parseFloat(currentTransform.split(",")[1].split(")")[0]) + dy;
+
+          airplane.setAttribute(
+            "transform",
+            `translate(${currentX},${currentY}) rotate(${turnAngle} 150 290)`
+          );
+          updateSpeedIndicator();
+          moveProjectiles();
+        }
+
+        function fireProjectile() {
+          const projectile = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "rect"
+          );
+          projectile.classList.add("projectile");
+          gameSvg.appendChild(projectile);
+
+          const radians = (turnAngle * Math.PI) / 180;
+          const projectileSpeed = speed * 4;
+          const maxDistance = 4 * speed;
+
+          const currentTransform = airplane.getAttribute("transform");
+          let initialX = parseFloat(
+            currentTransform.split("(")[1].split(",")[0]
+          );
+          let initialY = parseFloat(
+            currentTransform.split(",")[1].split(")")[0]
+          );
+
+          // Ensure the projectile starts from the front of the plane
+          initialX += 20 * Math.sin(radians);
+          initialY += -(20 * Math.cos(radians));
+
+          projectile.setAttribute(
+            "transform",
+            `translate(${initialX},${initialY}) rotate(${turnAngle} 150 290)`
+          );
+
+          // Set transition properties for continuous movement
+          projectile.style.transition = "transform linear";
+          projectile.style.transitionDuration =
+            maxDistance / projectileSpeed + "s";
+          projectile.style.transform = `translate(${
+            initialX + maxDistance
+          },${initialY}) rotate(${turnAngle} 150 290)`;
+        }
+
+        function moveProjectiles() {
+          const projectiles = document.querySelectorAll(".projectile");
+
+          projectiles.forEach((projectile) => {
+            const radians = (turnAngle * Math.PI) / 180;
+            const projectileSpeed = speed * 4;
+            const maxDistance = 4 * speed;
+
+            const dx = projectileSpeed * Math.sin(radians);
+            const dy = -projectileSpeed * Math.cos(radians);
+
+            const currentTransform = projectile.getAttribute("transform");
+            let currentX = parseFloat(
+              currentTransform.split("(")[1].split(",")[0]
+            );
+            let currentY = parseFloat(
+              currentTransform.split(",")[1].split(")")[0]
+            );
+
+            // Ensure the projectile doesn't go beyond the max distance
+            currentX = Math.min(currentX + dx, currentX + maxDistance);
+            currentY = Math.min(currentY + dy, currentY + maxDistance);
+
+            projectile.setAttribute(
+              "transform",
+              `translate(${currentX},${currentY}) rotate(${turnAngle} 150 290)`
+            );
+
+            // Set transition properties for continuous movement
+            projectile.style.transition = "transform linear";
+            projectile.style.transitionDuration =
+              maxDistance / projectileSpeed + "s";
+            projectile.style.transform = `translate(${
+              currentX + maxDistance
+            },${currentY}) rotate(${turnAngle} 150 290)`;
+          });
+        }
+
+        function updateSpeedIndicator() {
+          const indicatorHeight = (speed / speedSlider.max) * 100;
+          speedIndicator.style.setProperty(
+            "--speed-indicator-height",
+            `${indicatorHeight}%`
+          );
+        }
+
+        function updateValues() {
+          turnValue.textContent = turnSlider.value;
+          speedValue.textContent = speedSlider.value;
+        }
+
+        // Event listeners for slider changes
+        turnSlider.addEventListener("input", updateValues);
+        speedSlider.addEventListener("input", updateValues);
+
+        window.moveAirplane = moveAirplane;
+        window.fireProjectile = fireProjectile;
+
+        // Update speed indicator and initial values on page load
+        updateSpeedIndicator();
+        updateValues();
+      });
+    </script>
+  </body>
+</html>
