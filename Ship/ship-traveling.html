@@ -4,11 +4,39 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Random SVG Spaceship</title>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        background-color: black;
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+      #background-container,
+      #spaceship-container {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+      }
+      .background-element {
+        position: absolute;
+      }
+    </style>
   </head>
   <body>
+    <div id="background-container"></div>
     <div id="spaceship-container"></div>
 
     <script>
+      const backgroundContainer = document.getElementById(
+        "background-container"
+      );
+      const spaceshipContainer = document.getElementById("spaceship-container");
+
       const size = 20;
       let grid;
       let highlightColors;
@@ -28,10 +56,51 @@
         return element;
       }
 
-      function generateSpaceship(seed) {
-        const container = document.getElementById("spaceship-container");
+      function generateBackgroundElements() {
+        const svg = createSVGElement("svg", {
+          width: "100vw",
+          height: "100vh",
+        });
 
-        container.innerHTML = "";
+        // Add stars, asteroids, and planets outside the viewport
+        for (let i = 0; i < 50; i++) {
+          const element = createSVGElement("circle", {
+            cx: Math.random() * 100 + "%",
+            cy: Math.random() * -100 + "vh", // Ensure elements spawn above the viewport
+            r: Math.random() * 1,
+            fill: "#ffffff",
+          });
+          element.classList.add("background-element");
+          svg.appendChild(element);
+        }
+
+        for (let i = 0; i < 20; i++) {
+          const element = createSVGElement("circle", {
+            cx: Math.random() * 100 + "%",
+            cy: Math.random() * -100 + "vh", // Ensure elements spawn above the viewport
+            r: Math.random() * 2 + 1,
+            fill: "#888888",
+          });
+          element.classList.add("background-element");
+          svg.appendChild(element);
+        }
+
+        for (let i = 0; i < 5; i++) {
+          const element = createSVGElement("circle", {
+            cx: Math.random() * 100 + "%",
+            cy: Math.random() * -100 + "vh", // Ensure elements spawn above the viewport
+            r: Math.random() * 5 + 3,
+            fill: "#3366cc",
+          });
+          element.classList.add("background-element");
+          svg.appendChild(element);
+        }
+
+        backgroundContainer.appendChild(svg);
+      }
+
+      function generateSpaceship(seed) {
+        spaceshipContainer.innerHTML = "";
 
         Math.seed = seed;
 
@@ -42,10 +111,10 @@
 
         const colors = ["#A6419F", "#F263E9", "#7B518C", "#66E4F2", "#0D0D0D"];
         highlightColors = [
-          ["#FF0000", "#FF8080", "#FFD9D9"], // Red tones
-          ["#00FF00", "#80FF80", "#D9FFD9"], // Green tones
-          ["#0000FF", "#8080FF", "#D9D9FF"], // Blue tones
-          ["#FFFF00", "#FFFF80", "#FFFFD9"], // Yellow tones
+          ["#FF0000", "#FF8080", "#FFD9D9"],
+          ["#00FF00", "#80FF80", "#D9FFD9"],
+          ["#0000FF", "#8080FF", "#D9D9FF"],
+          ["#FFFF00", "#FFFF80", "#FFFFD9"],
         ];
         const chosenHighlightColor =
           highlightColors[Math.floor(Math.random() * highlightColors.length)];
@@ -142,12 +211,34 @@
         }
 
         if (svg.children.length > 0) {
-          container.appendChild(svg);
+          spaceshipContainer.appendChild(svg);
         }
       }
 
+      // Generate initial background and spaceship
+      generateBackgroundElements();
       const randomSeed = generateRandomSeed();
       generateSpaceship(randomSeed);
+
+      // Periodically add and remove background elements outside the viewport
+      setInterval(() => {
+        // Remove elements that are completely outside the viewport
+        const elements = document.querySelectorAll(".background-element");
+        elements.forEach((element) => {
+          const rect = element.getBoundingClientRect();
+          if (
+            rect.bottom < 0 ||
+            rect.top > window.innerHeight ||
+            rect.right < 0 ||
+            rect.left > window.innerWidth
+          ) {
+            element.remove();
+          }
+        });
+
+        // Add new background elements outside the viewport
+        generateBackgroundElements();
+      }, 5000); // Change the interval as needed
     </script>
   </body>
 </html>
